@@ -1,0 +1,24 @@
+<svg width="523" height="248" viewBox="0 0 523 248" fill="none" xmlns="http://www.w3.org/2000/svg">
+<line x1="245.042" y1="247.399" x2="245.042" y2="-1.52368e-05" stroke="black"/>
+<line x1="245.542" y1="0.500025" x2="-3.0561e-05" y2="0.500003" stroke="black"/>
+<line y1="61.3498" x2="171.584" y2="61.3498" stroke="black"/>
+<line x1="0.500004" y1="-5.55118e-06" x2="0.500001" y2="61.8499" stroke="black"/>
+<line x1="172.084" y1="61.8498" x2="172.084" y2="185.55" stroke="black"/>
+<line x1="171.584" y1="186.05" x2="3.04763e-05" y2="186.05" stroke="black"/>
+<line x1="0.5" y1="185.55" x2="0.499997" y2="247.399" stroke="black"/>
+<line y1="246.899" x2="245.542" y2="246.899" stroke="black"/>
+<line y1="-0.5" x2="247.399" y2="-0.5" transform="matrix(4.33832e-08 -1 -1 -4.4042e-08 276.605 247.399)" stroke="black"/>
+<line y1="-0.5" x2="245.542" y2="-0.5" transform="matrix(1 -8.80841e-08 -8.67665e-08 -1 276.605 3.05176e-05)" stroke="black"/>
+<line y1="-0.5" x2="171.584" y2="-0.5" transform="matrix(-1 0 0 1 522.147 61.8498)" stroke="black"/>
+<line y1="-0.5" x2="61.8499" y2="-0.5" transform="matrix(4.37114e-08 1 1 -4.37114e-08 522.147 -4.76837e-06)" stroke="black"/>
+<line y1="-0.5" x2="123.7" y2="-0.5" transform="matrix(6.50748e-08 1 1 -6.60631e-08 350.563 61.8498)" stroke="black"/>
+<line y1="-0.5" x2="171.584" y2="-0.5" transform="matrix(1 -8.39077e-08 -8.26525e-08 -1 350.563 185.55)" stroke="black"/>
+<line y1="-0.5" x2="61.8499" y2="-0.5" transform="matrix(4.37114e-08 1 1 -4.37114e-08 522.147 185.55)" stroke="black"/>
+<line y1="-0.5" x2="245.542" y2="-0.5" transform="matrix(-1 0 0 1 522.147 247.399)" stroke="black"/>
+<path d="M6.10352e-05 0H245.542V61.8499H6.10352e-05V0Z" fill="white"/>
+<path d="M6.10352e-05 185.55H245.542V247.399H6.10352e-05V185.55Z" fill="white"/>
+<path d="M276.605 185.55H522.147V247.399H276.605V185.55Z" fill="white"/>
+<path d="M276.605 247.399V-5.78165e-06H350.563V247.399H276.605Z" fill="white"/>
+<path d="M171.584 247.399L171.584 -5.78165e-06H245.542V247.399H171.584Z" fill="white"/>
+<path d="M276.605 0H522.147V61.8499H276.605V0Z" fill="white"/>
+</svg>
