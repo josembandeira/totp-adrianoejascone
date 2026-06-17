@@ -20,6 +20,7 @@ function SuperAdminSection() {
 
   const [newName, setNewName] = useState('')
   const [newEmail, setNewEmail] = useState('')
+  const [newPassword, setNewPassword] = useState('')
   const [newTeamId, setNewTeamId] = useState('')
   const [newRole, setNewRole] = useState<'admin' | 'member'>('member')
   const [creating, setCreating] = useState(false)
@@ -43,10 +44,10 @@ function SuperAdminSection() {
   }, [])
 
   const handleCreateUser = async () => {
-    if (!newName || !newEmail || !newTeamId) return
+    if (!newName || !newEmail || !newPassword || !newTeamId) return
     setCreating(true)
     const { error } = await supabase.functions.invoke('admin-create-user', {
-      body: { name: newName, email: newEmail, teamId: newTeamId, role: newRole },
+      body: { name: newName, email: newEmail, password: newPassword, teamId: newTeamId, role: newRole },
     })
     setCreating(false)
     if (error) {
@@ -59,9 +60,10 @@ function SuperAdminSection() {
       toast.error(msg)
       return
     }
-    toast.success(`Convite enviado para ${newEmail}`)
+    toast.success(`Usuário ${newEmail} criado com sucesso`)
     setNewName('')
     setNewEmail('')
+    setNewPassword('')
   }
 
   const handleAssign = async () => {
@@ -110,6 +112,15 @@ function SuperAdminSection() {
                 placeholder="pessoa@empresa.com"
               />
             </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label>Senha inicial</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+              />
+            </div>
             <div className="space-y-1.5">
               <Label>Equipe</Label>
               <select className={selectClassName} value={newTeamId} onChange={(e) => setNewTeamId(e.target.value)}>
@@ -132,7 +143,7 @@ function SuperAdminSection() {
               </select>
             </div>
           </div>
-          <Button onClick={handleCreateUser} disabled={creating || !newName || !newEmail || !newTeamId}>
+          <Button onClick={handleCreateUser} disabled={creating || !newName || !newEmail || !newPassword || !newTeamId}>
             {creating ? 'Enviando convite...' : 'Criar usuário e convidar'}
           </Button>
         </div>

@@ -12,6 +12,7 @@ const corsHeaders = {
 interface Payload {
   name: string
   email: string
+  password: string
   teamId: string
   role?: 'admin' | 'member'
 }
@@ -51,32 +52,41 @@ Deno.serve(async (req) => {
   }
 
   const payload = (await req.json()) as Payload
-  if (!payload.name || !payload.email || !payload.teamId) {
+  if (!payload.name || !payload.email || !payload.password || !payload.teamId) {
     return Response.json({ message: 'Dados incompletos' }, { status: 400, headers: corsHeaders })
+  }
+  if (payload.password.length < 6) {
+    return Response.json(
+      { message: 'A senha deve ter no mínimo 6 caracteres' },
+      { status: 400, headers: corsHeaders },
+    )
   }
   const role = payload.role === 'admin' ? 'admin' : 'member'
 
-  const siteUrl = Deno.env.get('SITE_URL') ?? 'https://totp-adrianoejascone.vercel.app'
-  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
-    payload.email,
-    { data: { name: payload.name }, redirectTo: `${siteUrl}/accept-invite` },
-  )
-  if (inviteError || !invited.user) {
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
+    email: payload.email,
+    password: payload.password,
+    email_confirm: true,
+    user_metadata: { name: payload.name },
+  })
+  if (createError || !created.user) {
     return Response.json(
-      { message: inviteError?.message ?? 'Não foi possível convidar o usuário' },
+      { message: createError?.message ?? 'Não foi possível criar o usuário' },
       { status: 400, headers: corsHeaders },
     )
   }
 
   const { error: memberError } = await admin
     .from('team_members')
-    .insert({ team_id: payload.teamId, user_id: invited.user.id, role })
+    .insert({ team_id: payload.teamId, user_id: created.user.id, role })
   if (memberError) {
+    // Desfaz a criação do auth user para não deixar órfão
+    await admin.auth.admin.deleteUser(created.user.id)
     return Response.json({ message: memberError.message }, { status: 400, headers: corsHeaders })
   }
 
   return Response.json(
-    { id: invited.user.id, email: invited.user.email },
+    { id: created.user.id, email: created.user.email },
     { headers: corsHeaders },
   )
 })
