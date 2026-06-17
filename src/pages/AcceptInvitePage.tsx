@@ -58,23 +58,25 @@ export function AcceptInvitePage() {
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
   useEffect(() => {
-    let redirectTimer: ReturnType<typeof setTimeout> | null = null
+    // Verifica a URL antes de qualquer coisa: se não há token de convite,
+    // redireciona imediatamente sem esperar eventos do Supabase.
+    const params = new URLSearchParams(window.location.search)
+    const hashParams = new URLSearchParams(window.location.hash.substring(1))
+    const hasToken =
+      params.has('token_hash') ||
+      params.has('code') ||
+      hashParams.has('access_token')
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        if (redirectTimer) clearTimeout(redirectTimer)
-        setSessionReady(true)
-      } else if (event === 'INITIAL_SESSION') {
-        // Nenhuma sessão existente: aguarda Supabase processar o token do URL.
-        // Se SIGNED_IN não chegar em 2s, o link é inválido ou expirado.
-        redirectTimer = setTimeout(() => navigate('/login', { replace: true }), 2000)
-      }
+    if (!hasToken) {
+      navigate('/login', { replace: true })
+      return
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) setSessionReady(true)
     })
 
-    return () => {
-      subscription.unsubscribe()
-      if (redirectTimer) clearTimeout(redirectTimer)
-    }
+    return () => subscription.unsubscribe()
   }, [navigate])
 
   const onSubmit = async (values: FormValues) => {
