@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { useAuthStore } from '@/store/auth'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
-import { Shield, Key, Bell, Palette, UserPlus, ShieldCheck } from 'lucide-react'
+import { Shield, Key, Bell, Palette, UserPlus, ShieldCheck, Eye, EyeOff } from 'lucide-react'
 import type { Team } from '@/types'
 
 const selectClassName =
@@ -24,6 +24,7 @@ function SuperAdminSection() {
   const [newTeamId, setNewTeamId] = useState('')
   const [newRole, setNewRole] = useState<'admin' | 'member'>('member')
   const [creating, setCreating] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const [assignEmail, setAssignEmail] = useState('')
   const [assignTeamId, setAssignTeamId] = useState('')
@@ -114,12 +115,23 @@ function SuperAdminSection() {
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label>Senha inicial</Label>
-              <Input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  className="pr-9"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>Equipe</Label>
