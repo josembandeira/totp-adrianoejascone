@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
   const siteUrl = Deno.env.get('SITE_URL') ?? 'https://totp-adrianoejascone.vercel.app'
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
     payload.email,
-    { data: { name: payload.name }, redirectTo: siteUrl },
+    { data: { name: payload.name }, redirectTo: `${siteUrl}/accept-invite` },
   )
   if (inviteError || !invited.user) {
     return Response.json(

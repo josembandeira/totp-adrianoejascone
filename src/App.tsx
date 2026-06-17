@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { LoginPage } from '@/pages/LoginPage'
+import { AcceptInvitePage } from '@/pages/AcceptInvitePage'
 import { DashboardLayout } from '@/pages/DashboardLayout'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { ServicesPage } from '@/pages/ServicesPage'
@@ -12,6 +13,7 @@ export function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/accept-invite" element={<AcceptInvitePage />} />
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/dashboard/services" element={<ServicesPage />} />
