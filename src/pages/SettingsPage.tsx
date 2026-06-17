@@ -50,7 +50,13 @@ function SuperAdminSection() {
     })
     setCreating(false)
     if (error) {
-      toast.error(error.message)
+      let msg = error.message
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const body = await (error as any).context.json()
+        if (body?.message) msg = body.message
+      } catch { /* sem body JSON */ }
+      toast.error(msg)
       return
     }
     toast.success(`Convite enviado para ${newEmail}`)
