@@ -24,10 +24,10 @@ export async function ensureTeamKeyAccess(teamId: string): Promise<Uint8Array | 
   if (cached) return cached
 
   const { user, keyPair } = useAuthStore.getState()
-  if (!user || !keyPair) return null
+  if (!user) return null
 
   // Caminho primário: lê key_material diretamente da equipe via join.
-  // Qualquer membro autenticado acessa sem precisar que um admin propague.
+  // Não precisa de keyPair — funciona mesmo após refresh da página.
   const { data: membership } = await supabase
     .from('team_members')
     .select('teams ( key_material )')
@@ -42,7 +42,10 @@ export async function ensureTeamKeyAccess(teamId: string): Promise<Uint8Array | 
     return teamKey
   }
 
-  // Fallback: wrapped_key para equipes criadas antes da migração key_material
+  // Fallback: wrapped_key para equipes criadas antes da migração key_material.
+  // Este caminho precisa de keyPair para abrir o envelope cifrado.
+  if (!keyPair) return null
+
   const { data: rows, error } = await supabase
     .from('team_members')
     .select('user_id, wrapped_key')
