@@ -29,6 +29,7 @@ interface ServicesStore {
   activeTeamId: string | null
   search: string
   loading: boolean
+  keyAccessDenied: boolean
   loadServices: (teamId: string) => Promise<void>
   addService: (teamId: string, data: ServiceFormData, addedBy: string) => Promise<void>
   removeService: (id: string) => Promise<void>
@@ -42,12 +43,13 @@ export const useServicesStore = create<ServicesStore>((set, get) => ({
   activeTeamId: null,
   search: '',
   loading: false,
+  keyAccessDenied: false,
 
   loadServices: async (teamId) => {
-    set({ loading: true })
+    set({ loading: true, keyAccessDenied: false })
     const teamKey = (await ensureTeamKeyAccess(teamId)) ?? getCachedTeamKey(teamId)
     if (!teamKey) {
-      set({ services: [], decryptedSeeds: {}, loading: false })
+      set({ services: [], decryptedSeeds: {}, loading: false, keyAccessDenied: true })
       return
     }
 

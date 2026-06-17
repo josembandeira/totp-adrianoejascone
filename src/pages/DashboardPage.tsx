@@ -8,8 +8,17 @@ import { useAuthStore } from '@/store/auth'
 import type { ServiceFormData } from '@/types'
 
 export function DashboardPage() {
-  const { services, decryptedSeeds, search, activeTeamId, loadServices, addService, removeService } =
-    useServicesStore()
+  const {
+    services,
+    decryptedSeeds,
+    search,
+    activeTeamId,
+    loading,
+    keyAccessDenied,
+    loadServices,
+    addService,
+    removeService,
+  } = useServicesStore()
   const { user } = useAuthStore()
 
   useEffect(() => {
@@ -55,7 +64,21 @@ export function DashboardPage() {
         actions={<AddServiceModal onAdd={handleAdd} />}
       />
       <div className="flex-1 overflow-y-auto p-6">
-        {filtered.length === 0 ? (
+        {!loading && keyAccessDenied ? (
+          <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
+            <p className="text-lg font-medium">Acesso pendente</p>
+            <p className="text-sm text-center max-w-sm">
+              Esta equipe ainda não foi migrada para o novo sistema de chaves. Um administrador
+              precisa abrir o dashboard uma vez para liberar o acesso.
+            </p>
+            <button
+              className="text-sm text-primary underline underline-offset-2"
+              onClick={() => activeTeamId && loadServices(activeTeamId)}
+            >
+              Tentar novamente
+            </button>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
             <p className="text-lg font-medium">Nenhum serviço encontrado</p>
             <p className="text-sm">

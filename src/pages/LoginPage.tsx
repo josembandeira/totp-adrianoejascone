@@ -107,15 +107,15 @@ export function LoginPage() {
 
       if (teams.length === 0) {
         const slug = `equipe-${authUser.id.slice(0, 8)}`
+        const teamKey = await generateTeamKey()
+        const keyMaterial = await publicKeyToBase64(teamKey)
+        const wrappedKey = await sealTeamKeyForCreator(teamKey, publicKeyBase64)
         const { data: team, error: teamError } = await supabase
           .from('teams')
-          .insert({ name: `Equipe de ${profile.name}`, slug })
+          .insert({ name: `Equipe de ${profile.name}`, slug, key_material: keyMaterial })
           .select('id, name, slug')
           .single()
         if (teamError || !team) throw new Error('Não foi possível criar a equipe')
-
-        const teamKey = await generateTeamKey()
-        const wrappedKey = await sealTeamKeyForCreator(teamKey, publicKeyBase64)
         const { error: memberError } = await supabase
           .from('team_members')
           .insert({ team_id: team.id, user_id: authUser.id, role: 'admin', wrapped_key: wrappedKey })

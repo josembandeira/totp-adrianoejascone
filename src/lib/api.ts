@@ -1,7 +1,7 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api'
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('totp_token') : null
+  const token = typeof window !== 'undefined' ? sessionStorage.getItem('totp_token') : null
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: {
       'Content-Type': 'application/json',

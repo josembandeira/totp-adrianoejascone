@@ -19,12 +19,6 @@ async function sealForUser(teamKey: Uint8Array, publicKeyBase64: string): Promis
   return sealForMember(teamKey, publicKey)
 }
 
-// Garante que o usuário atual tenha acesso à chave da equipe, criando-a se
-// for a primeira vez, e propaga o acesso a membros (e Super Admins) que
-// ainda não têm um envelope (`wrapped_key`). Retorna null se a chave da
-// equipe já existe mas o usuário atual ainda não foi autorizado por
-// ninguém — nesse caso é preciso esperar um membro com acesso abrir esta
-// tela para que a propagação aconteça.
 export async function ensureTeamKeyAccess(teamId: string): Promise<Uint8Array | null> {
   const cached = cache.get(teamId)
   if (cached) return cached
@@ -32,6 +26,23 @@ export async function ensureTeamKeyAccess(teamId: string): Promise<Uint8Array | 
   const { user, keyPair } = useAuthStore.getState()
   if (!user || !keyPair) return null
 
+  // Caminho primário: lê key_material diretamente da equipe via join.
+  // Qualquer membro autenticado acessa sem precisar que um admin propague.
+  const { data: membership } = await supabase
+    .from('team_members')
+    .select('teams ( key_material )')
+    .eq('team_id', teamId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (membership?.teams?.key_material) {
+    const teamKey = await publicKeyFromBase64(membership.teams.key_material)
+    cache.set(teamId, teamKey)
+    grantAccessToMissingMembers(teamId, teamKey)
+    return teamKey
+  }
+
+  // Fallback: wrapped_key para equipes criadas antes da migração key_material
   const { data: rows, error } = await supabase
     .from('team_members')
     .select('user_id, wrapped_key')
@@ -45,11 +56,7 @@ export async function ensureTeamKeyAccess(teamId: string): Promise<Uint8Array | 
     teamKey = await openSealedKey(ownRow.wrapped_key, keyPair)
   } else {
     const someoneElseHasKey = rows.some((r) => r.user_id !== user.id && r.wrapped_key)
-    if (someoneElseHasKey) {
-      // A chave já existe, mas ninguém selou uma cópia para este usuário
-      // ainda. É preciso aguardar um membro com acesso conceder.
-      return null
-    }
+    if (someoneElseHasKey) return null
     if (!ownRow) return null
     teamKey = await generateTeamKey()
     const wrapped = await sealForUser(teamKey, await publicKeyToBase64(keyPair.publicKey))
@@ -62,14 +69,17 @@ export async function ensureTeamKeyAccess(teamId: string): Promise<Uint8Array | 
   }
 
   cache.set(teamId, teamKey)
+
+  // Migração automática: persiste key_material para que membros futuros não precisem de propagação.
+  // Pode falhar silenciosamente se o usuário não tiver permissão de UPDATE na tabela teams.
+  const keyMaterial = await publicKeyToBase64(teamKey)
+  await supabase.from('teams').update({ key_material: keyMaterial }).eq('id', teamId)
+
   await grantAccessToMissingMembers(teamId, teamKey)
   return teamKey
 }
 
-// Selará a chave da equipe para qualquer membro existente sem `wrapped_key`
-// e adicionará Super Admins que ainda não fazem parte da equipe, desde que
-// já tenham gerado seu par de chaves (feito no primeiro login deles).
-async function grantAccessToMissingMembers(teamId: string, teamKey: Uint8Array): Promise<void> {
+export async function grantAccessToMissingMembers(teamId: string, teamKey: Uint8Array): Promise<void> {
   const { data: members } = await supabase
     .from('team_members')
     .select('user_id, wrapped_key, profiles ( public_key )')
@@ -78,11 +88,12 @@ async function grantAccessToMissingMembers(teamId: string, teamKey: Uint8Array):
   for (const member of members ?? []) {
     if (member.wrapped_key || !member.profiles?.public_key) continue
     const wrapped = await sealForUser(teamKey, member.profiles.public_key)
-    await supabase
+    const { error } = await supabase
       .from('team_members')
       .update({ wrapped_key: wrapped })
       .eq('team_id', teamId)
       .eq('user_id', member.user_id)
+    if (error) console.error('[teamKeys] falha ao selar chave para membro', member.user_id, error)
   }
 
   const memberIds = new Set((members ?? []).map((m) => m.user_id))
@@ -103,7 +114,6 @@ async function grantAccessToMissingMembers(teamId: string, teamKey: Uint8Array):
   }
 }
 
-// Usado ao criar uma equipe nova: sela a chave recém-gerada para o criador.
 export async function sealTeamKeyForCreator(
   teamKey: Uint8Array,
   creatorPublicKeyBase64: string,
@@ -111,9 +121,6 @@ export async function sealTeamKeyForCreator(
   return sealForUser(teamKey, creatorPublicKeyBase64)
 }
 
-// Selará a chave de uma equipe recém-criada para todos os Super Admins
-// atuais (exceto o criador). Deve ser chamado só depois que a linha de
-// `team_members` do criador já foi inserida, para satisfazer a RLS.
 export async function sealNewTeamKeyForSuperAdmins(
   teamKey: Uint8Array,
   creatorId: string,

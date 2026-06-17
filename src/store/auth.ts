@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import type { User } from '@/types'
 import type { KeyPair } from '@/lib/crypto'
 
@@ -22,18 +22,19 @@ export const useAuthStore = create<AuthStore>()(
       masterKey: null,
       keyPair: null,
       login: (user, token) => {
-        localStorage.setItem('totp_token', token)
+        sessionStorage.setItem('totp_token', token)
         set({ user, token })
       },
       setMasterKey: (key) => set({ masterKey: key }),
       setKeyPair: (keyPair) => set({ keyPair }),
       logout: () => {
-        localStorage.removeItem('totp_token')
+        sessionStorage.removeItem('totp_token')
         set({ user: null, token: null, masterKey: null, keyPair: null })
       },
     }),
     {
       name: 'totp-auth',
+      storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({ user: state.user, token: state.token }),
     },
   ),

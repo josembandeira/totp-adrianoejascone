@@ -19,7 +19,7 @@ import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/auth'
 import { useServicesStore } from '@/store/services'
-import { ensureTeamKeyAccess } from '@/lib/teamKeys'
+import { ensureTeamKeyAccess, getCachedTeamKey, grantAccessToMissingMembers } from '@/lib/teamKeys'
 import type { Team } from '@/types'
 
 interface Member {
@@ -114,7 +114,10 @@ export function TeamsPage() {
     toast.success(`${inviteEmail} adicionado à equipe`)
     setInviteEmail('')
     setInviteOpen(false)
-    await ensureTeamKeyAccess(viewTeam.id)
+
+    const teamKey = getCachedTeamKey(viewTeam.id) ?? (await ensureTeamKeyAccess(viewTeam.id))
+    if (teamKey) await grantAccessToMissingMembers(viewTeam.id, teamKey)
+
     loadMembers(viewTeam.id)
   }
 
