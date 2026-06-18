@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Header } from '@/components/layout/Header'
 import { TOTPCard } from '@/components/totp/TOTPCard'
@@ -6,8 +7,10 @@ import { AddServiceModal } from '@/components/totp/AddServiceModal'
 import { useServicesStore } from '@/store/services'
 import { useAuthStore } from '@/store/auth'
 import type { ServiceFormData } from '@/types'
+import type { DashboardOutletContext } from './DashboardLayout'
 
 export function DashboardPage() {
+  const { onMenuToggle } = useOutletContext<DashboardOutletContext>()
   const {
     services,
     decryptedSeeds,
@@ -62,8 +65,9 @@ export function DashboardPage() {
         title="Dashboard"
         subtitle={`${filtered.length} serviços ativos`}
         actions={<AddServiceModal onAdd={handleAdd} />}
+        onMenuToggle={onMenuToggle}
       />
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
         {!loading && keyAccessDenied ? (
           <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
             <p className="text-lg font-medium">Acesso pendente</p>

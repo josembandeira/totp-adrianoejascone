@@ -81,7 +81,7 @@ export function AddServiceModal({ onAdd }: AddServiceModalProps) {
     <>
       <Button className="gap-2" onClick={() => setOpen(true)}>
         <Plus className="h-4 w-4" />
-        Adicionar serviço
+        <span className="hidden sm:inline">Adicionar serviço</span>
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -91,7 +91,7 @@ export function AddServiceModal({ onAdd }: AddServiceModalProps) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="name">Nome do serviço</Label>
               <Input id="name" placeholder="Digite o nome do serviço" {...register('name')} />

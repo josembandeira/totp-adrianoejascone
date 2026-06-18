@@ -59,7 +59,10 @@ export function TOTPCard({ service, decryptedSeed, onDelete }: TOTPCardProps) {
   const displayCode = hidden ? '••• •••' : `${code.slice(0, 3)} ${code.slice(3)}`
 
   return (
-    <Card className="group relative overflow-hidden border-border/50 bg-card transition-all duration-200 hover:border-border hover:shadow-md">
+    <Card
+      className="group relative cursor-pointer overflow-hidden border-border/50 bg-card transition-all duration-200 hover:border-border hover:shadow-md"
+      onClick={handleCopy}
+    >
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <ServiceIcon name={service.name} color={service.color} />
@@ -89,7 +92,7 @@ export function TOTPCard({ service, decryptedSeed, onDelete }: TOTPCardProps) {
               size="icon"
               variant="ghost"
               className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
-              onClick={() => setHidden((h) => !h)}
+              onClick={(e) => { e.stopPropagation(); setHidden((h) => !h) }}
             >
               {hidden ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
             </Button>
@@ -98,7 +101,7 @@ export function TOTPCard({ service, decryptedSeed, onDelete }: TOTPCardProps) {
               size="icon"
               variant="ghost"
               className="h-8 w-8"
-              onClick={handleCopy}
+              onClick={(e) => { e.stopPropagation(); handleCopy() }}
             >
               {copied ? (
                 <Check className="h-3.5 w-3.5 text-emerald-500" />
@@ -112,7 +115,7 @@ export function TOTPCard({ service, decryptedSeed, onDelete }: TOTPCardProps) {
                 size="icon"
                 variant="ghost"
                 className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
-                onClick={() => onDelete(service.id)}
+                onClick={(e) => { e.stopPropagation(); onDelete(service.id) }}
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>

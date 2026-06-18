@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import { Header } from '@/components/layout/Header'
+import type { DashboardOutletContext } from './DashboardLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -99,7 +101,7 @@ function SuperAdminSection() {
             <UserPlus className="h-3.5 w-3.5" />
             Criar novo usuário
           </p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Nome</Label>
               <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nome completo" />
@@ -164,7 +166,7 @@ function SuperAdminSection() {
 
         <div className="space-y-3">
           <p className="text-sm font-medium">Atribuir usuário existente a uma equipe</p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="col-span-2 space-y-1.5">
               <Label>E-mail</Label>
               <Input
@@ -210,13 +212,14 @@ function SuperAdminSection() {
 }
 
 export function SettingsPage() {
+  const { onMenuToggle } = useOutletContext<DashboardOutletContext>()
   const { user } = useAuthStore()
   const [name, setName] = useState(user?.name ?? '')
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Configurações" subtitle="Gerencie sua conta e preferências" />
-      <div className="flex-1 overflow-y-auto p-6">
+      <Header title="Configurações" subtitle="Gerencie sua conta e preferências" onMenuToggle={onMenuToggle} />
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-xl space-y-4">
           <Card>
             <CardHeader className="pb-3">

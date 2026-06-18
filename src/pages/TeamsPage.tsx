@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import { Users, Plus, Crown, ShieldCheck } from 'lucide-react'
 import { Header } from '@/components/layout/Header'
+import type { DashboardOutletContext } from './DashboardLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -31,6 +33,7 @@ interface Member {
 }
 
 export function TeamsPage() {
+  const { onMenuToggle } = useOutletContext<DashboardOutletContext>()
   const { user } = useAuthStore()
   const { activeTeamId } = useServicesStore()
   const [members, setMembers] = useState<Member[]>([])
@@ -145,6 +148,7 @@ export function TeamsPage() {
       <Header
         title="Equipes"
         subtitle={viewTeam ? `Gerencie os membros de ${viewTeam.name}` : 'Gerencie os membros da sua equipe'}
+        onMenuToggle={onMenuToggle}
         actions={
           isAdmin && (
             <Button className="gap-2" onClick={() => setInviteOpen(true)} disabled={!viewTeam}>
@@ -186,7 +190,7 @@ export function TeamsPage() {
         </DialogContent>
       </Dialog>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-2xl space-y-4">
           {isSuperAdmin && teamOptions.length > 1 && (
             <DropdownMenu>

@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, ShieldCheck, Users, Settings, LogOut } from 'lucide-react'
+import { LayoutDashboard, ShieldCheck, Users, Settings, LogOut, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -16,17 +16,38 @@ const NAV = [
 const isActive = (pathname: string, href: string) =>
   href === '/dashboard' ? pathname === href : pathname.startsWith(href)
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean
+  onClose?: () => void
+}
+
+export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const { pathname } = useLocation()
   const { user, logout } = useAuthStore()
 
   return (
-    <aside className="flex h-screen w-60 flex-col border-r border-border bg-card">
+    <aside
+      className={cn(
+        'flex h-screen w-60 flex-col border-r border-border bg-card',
+        // Mobile: fixed overlay, desliza para dentro/fora
+        'fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out',
+        isOpen ? 'translate-x-0' : '-translate-x-full',
+        // Desktop: sempre visível, no fluxo normal
+        'md:relative md:translate-x-0',
+      )}
+    >
       <div className="flex h-16 items-center gap-2.5 px-5">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
           <ShieldCheck className="h-4 w-4 text-primary-foreground" />
         </div>
         <span className="font-semibold text-foreground">TOTP Teams</span>
+        <button
+          className="ml-auto text-muted-foreground hover:text-foreground md:hidden"
+          onClick={onClose}
+          aria-label="Fechar menu"
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
 
       <Separator />
@@ -36,6 +57,7 @@ export function Sidebar() {
           <Link
             key={href}
             to={href}
+            onClick={onClose}
             className={cn(
               'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
               isActive(pathname, href)

@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import { Shield } from 'lucide-react'
 import { Header } from '@/components/layout/Header'
 import { AddServiceModal } from '@/components/totp/AddServiceModal'
@@ -8,6 +9,7 @@ import { useServicesStore } from '@/store/services'
 import { useAuthStore } from '@/store/auth'
 import { toast } from 'sonner'
 import type { ServiceFormData } from '@/types'
+import type { DashboardOutletContext } from './DashboardLayout'
 
 const SERVICE_COLORS: Record<string, string> = {
   blue: 'from-blue-500 to-blue-600',
@@ -19,6 +21,7 @@ const SERVICE_COLORS: Record<string, string> = {
 }
 
 export function ServicesPage() {
+  const { onMenuToggle } = useOutletContext<DashboardOutletContext>()
   const { services, search, activeTeamId, loadServices, addService, removeService } = useServicesStore()
   const { user } = useAuthStore()
 
@@ -62,64 +65,67 @@ export function ServicesPage() {
         title="Serviços"
         subtitle="Gerencie os serviços TOTP da equipe"
         actions={<AddServiceModal onAdd={handleAdd} />}
+        onMenuToggle={onMenuToggle}
       />
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="rounded-xl border border-border overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/40">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Serviço</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Conta</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Tags</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Adicionado</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filtered.map((svc) => (
-                <tr key={svc.id} className="bg-card hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br ${
-                          SERVICE_COLORS[svc.color ?? 'blue']
-                        } text-white text-xs font-bold`}
-                      >
-                        {svc.name.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">{svc.name}</p>
-                        <p className="text-xs text-muted-foreground">{svc.issuer}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{svc.accountName}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1">
-                      {svc.tags?.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">
-                    {new Date(svc.createdAt).toLocaleDateString('pt-BR')}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDelete(svc.id)}
-                    >
-                      Remover
-                    </Button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-140 text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/40">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Serviço</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Conta</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Tags</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Adicionado</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filtered.map((svc) => (
+                  <tr key={svc.id} className="bg-card hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br ${
+                            SERVICE_COLORS[svc.color ?? 'blue']
+                          } text-white text-xs font-bold`}
+                        >
+                          {svc.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">{svc.name}</p>
+                          <p className="text-xs text-muted-foreground">{svc.issuer}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{svc.accountName}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {svc.tags?.map((tag) => (
+                          <Badge key={tag} variant="secondary" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {new Date(svc.createdAt).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(svc.id)}
+                      >
+                        Remover
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           {filtered.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 gap-2 text-muted-foreground">
               <Shield className="h-8 w-8" />
