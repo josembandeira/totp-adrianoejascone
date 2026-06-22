@@ -136,7 +136,7 @@ export function LoginPage() {
           })
         }
 
-        teams = [{ id: team.id, name: team.name, slug: team.slug, memberCount: 1 }]
+        teams = [{ id: team.id, name: team.name, slug: team.slug, memberCount: 1, role: 'admin' }]
       }
 
       const user: User = {

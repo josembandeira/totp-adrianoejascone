@@ -12,7 +12,7 @@ export interface Team {
   name: string
   slug: string
   memberCount: number
-  role: 'admin' | 'member'
+  role?: 'admin' | 'member'
 }
 
 export interface TOTPService {

@@ -114,20 +114,22 @@ export const useServicesStore = create<ServicesStore>((set, get) => ({
     const service = services.find((s) => s.id === id)
     if (!service) return
 
-    const updates: Record<string, unknown> = {
+    let newDecryptedSeed = decryptedSeeds[id]
+    let encryptedSeed: string | undefined
+    if (data.seed) {
+      const teamKey = (await ensureTeamKeyAccess(service.teamId)) ?? getCachedTeamKey(service.teamId)
+      if (!teamKey) throw new Error('Sem acesso à chave desta equipe')
+      encryptedSeed = await encryptSeed(data.seed, teamKey)
+      newDecryptedSeed = data.seed
+    }
+
+    const updates: Database['public']['Tables']['services']['Update'] = {
       name: data.name,
       issuer: data.issuer,
       account_name: data.accountName,
       color: data.color,
       tags: data.tags ?? [],
-    }
-
-    let newDecryptedSeed = decryptedSeeds[id]
-    if (data.seed) {
-      const teamKey = (await ensureTeamKeyAccess(service.teamId)) ?? getCachedTeamKey(service.teamId)
-      if (!teamKey) throw new Error('Sem acesso à chave desta equipe')
-      updates.encrypted_seed = await encryptSeed(data.seed, teamKey)
-      newDecryptedSeed = data.seed
+      ...(encryptedSeed !== undefined && { encrypted_seed: encryptedSeed }),
     }
 
     const { data: row, error } = await supabase
