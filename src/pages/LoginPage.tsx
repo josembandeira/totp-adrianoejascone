@@ -96,14 +96,19 @@ export function LoginPage() {
 
       const { data: memberships, error: membershipsError } = await supabase
         .from('team_members')
-        .select('team_id, teams ( id, name, slug )')
+        .select('team_id, role, teams ( id, name, slug )')
         .eq('user_id', authUser.id)
       if (membershipsError) throw new Error('Não foi possível carregar suas equipes')
 
       let teams: Team[] = (memberships ?? [])
-        .map((m) => m.teams)
-        .filter((t): t is { id: string; name: string; slug: string } => Boolean(t))
-        .map((t) => ({ id: t.id, name: t.name, slug: t.slug, memberCount: 0 }))
+        .filter((m): m is typeof m & { teams: { id: string; name: string; slug: string } } => Boolean(m.teams))
+        .map((m) => ({
+          id: m.teams.id,
+          name: m.teams.name,
+          slug: m.teams.slug,
+          memberCount: 0,
+          role: (m.role ?? 'member') as 'admin' | 'member',
+        }))
 
       if (teams.length === 0) {
         const slug = `equipe-${authUser.id.slice(0, 8)}`

@@ -23,6 +23,15 @@ function mapRow(row: ServiceRow): TOTPService {
   }
 }
 
+export type ServiceUpdateData = {
+  name: string
+  issuer: string
+  accountName: string
+  seed?: string
+  color?: string
+  tags?: string[]
+}
+
 interface ServicesStore {
   services: TOTPService[]
   decryptedSeeds: Record<string, string>
@@ -32,6 +41,7 @@ interface ServicesStore {
   keyAccessDenied: boolean
   loadServices: (teamId: string) => Promise<void>
   addService: (teamId: string, data: ServiceFormData, addedBy: string) => Promise<void>
+  updateService: (id: string, data: ServiceUpdateData) => Promise<void>
   removeService: (id: string) => Promise<void>
   setActiveTeam: (teamId: string) => void
   setSearch: (search: string) => void
@@ -96,6 +106,41 @@ export const useServicesStore = create<ServicesStore>((set, get) => ({
     set((s) => ({
       services: [...s.services, service],
       decryptedSeeds: { ...s.decryptedSeeds, [service.id]: data.seed },
+    }))
+  },
+
+  updateService: async (id, data) => {
+    const { services, decryptedSeeds } = get()
+    const service = services.find((s) => s.id === id)
+    if (!service) return
+
+    const updates: Record<string, unknown> = {
+      name: data.name,
+      issuer: data.issuer,
+      account_name: data.accountName,
+      color: data.color,
+      tags: data.tags ?? [],
+    }
+
+    let newDecryptedSeed = decryptedSeeds[id]
+    if (data.seed) {
+      const teamKey = (await ensureTeamKeyAccess(service.teamId)) ?? getCachedTeamKey(service.teamId)
+      if (!teamKey) throw new Error('Sem acesso à chave desta equipe')
+      updates.encrypted_seed = await encryptSeed(data.seed, teamKey)
+      newDecryptedSeed = data.seed
+    }
+
+    const { data: row, error } = await supabase
+      .from('services')
+      .update(updates)
+      .eq('id', id)
+      .select('*')
+      .single()
+    if (error || !row) throw new Error(error?.message ?? 'Não foi possível atualizar o serviço')
+
+    set((s) => ({
+      services: s.services.map((sv) => (sv.id === id ? mapRow(row) : sv)),
+      decryptedSeeds: { ...s.decryptedSeeds, [id]: newDecryptedSeed },
     }))
   },
 

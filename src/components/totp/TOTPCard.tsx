@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Copy, Check, Trash2, Eye, EyeOff } from 'lucide-react'
+import { Copy, Check, Trash2, Eye, EyeOff, ExternalLink, Pencil } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -13,6 +13,7 @@ interface TOTPCardProps {
   service: TOTPService
   decryptedSeed: string
   onDelete?: (id: string) => void
+  onEdit?: (service: TOTPService) => void
 }
 
 const SERVICE_COLORS: Record<string, string> = {
@@ -35,7 +36,7 @@ function ServiceIcon({ name, color }: { name: string; color?: string }) {
   )
 }
 
-export function TOTPCard({ service, decryptedSeed, onDelete }: TOTPCardProps) {
+export function TOTPCard({ service, decryptedSeed, onDelete, onEdit }: TOTPCardProps) {
   const [code, setCode] = useState('------')
   const [copied, setCopied] = useState(false)
   const [hidden, setHidden] = useState(false)
@@ -96,6 +97,29 @@ export function TOTPCard({ service, decryptedSeed, onDelete }: TOTPCardProps) {
             >
               {hidden ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
             </Button>
+
+            {service.issuer?.startsWith('http') && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
+                onClick={(e) => { e.stopPropagation(); window.open(service.issuer, '_blank', 'noopener,noreferrer') }}
+                title={service.issuer}
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+              </Button>
+            )}
+
+            {onEdit && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
+                onClick={(e) => { e.stopPropagation(); onEdit(service) }}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            )}
 
             <Button
               size="icon"

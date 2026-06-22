@@ -1,12 +1,14 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Header } from '@/components/layout/Header'
 import { TOTPCard } from '@/components/totp/TOTPCard'
 import { AddServiceModal } from '@/components/totp/AddServiceModal'
+import { EditServiceModal } from '@/components/totp/EditServiceModal'
 import { useServicesStore } from '@/store/services'
 import { useAuthStore } from '@/store/auth'
-import type { ServiceFormData } from '@/types'
+import type { ServiceFormData, TOTPService } from '@/types'
+import type { ServiceUpdateData } from '@/store/services'
 import type { DashboardOutletContext } from './DashboardLayout'
 
 export function DashboardPage() {
@@ -20,13 +22,19 @@ export function DashboardPage() {
     keyAccessDenied,
     loadServices,
     addService,
+    updateService,
     removeService,
   } = useServicesStore()
   const { user } = useAuthStore()
+  const [editingService, setEditingService] = useState<TOTPService | null>(null)
 
   useEffect(() => {
     if (activeTeamId) loadServices(activeTeamId)
   }, [activeTeamId, loadServices])
+
+  const isAdmin =
+    user?.isSuperAdmin ||
+    user?.teams.some((t) => t.id === activeTeamId && t.role === 'admin')
 
   const filtered = useMemo(
     () =>
@@ -50,6 +58,15 @@ export function DashboardPage() {
     }
   }
 
+  const handleEdit = async (id: string, data: ServiceUpdateData) => {
+    try {
+      await updateService(id, data)
+      toast.success('Serviço atualizado com sucesso')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Não foi possível atualizar o serviço')
+    }
+  }
+
   const handleDelete = async (id: string) => {
     try {
       await removeService(id)
@@ -64,7 +81,7 @@ export function DashboardPage() {
       <Header
         title="Dashboard"
         subtitle={`${filtered.length} serviços ativos`}
-        actions={<AddServiceModal onAdd={handleAdd} />}
+        actions={isAdmin ? <AddServiceModal onAdd={handleAdd} /> : undefined}
         onMenuToggle={onMenuToggle}
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
@@ -96,12 +113,23 @@ export function DashboardPage() {
                 key={service.id}
                 service={service}
                 decryptedSeed={decryptedSeeds[service.id] ?? ''}
-                onDelete={handleDelete}
+                onDelete={isAdmin ? handleDelete : undefined}
+                onEdit={isAdmin ? setEditingService : undefined}
               />
             ))}
           </div>
         )}
       </div>
+
+      {editingService && (
+        <EditServiceModal
+          service={editingService}
+          decryptedSeed={decryptedSeeds[editingService.id] ?? ''}
+          open={!!editingService}
+          onOpenChange={(open) => { if (!open) setEditingService(null) }}
+          onEdit={handleEdit}
+        />
+      )}
     </div>
   )
 }
