@@ -22,6 +22,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/auth'
 import { useServicesStore } from '@/store/services'
 import { ensureTeamKeyAccess, getCachedTeamKey, grantAccessToMissingMembers } from '@/lib/teamKeys'
+import { generateTeamKey, publicKeyToBase64, publicKeyFromBase64, sealForMember } from '@/lib/crypto'
 import type { Team } from '@/types'
 
 interface Member {
@@ -43,6 +44,9 @@ export function TeamsPage() {
   const [inviting, setInviting] = useState(false)
   const [allTeams, setAllTeams] = useState<Team[]>([])
   const [viewTeamId, setViewTeamId] = useState<string | null>(null)
+  const [createTeamOpen, setCreateTeamOpen] = useState(false)
+  const [newTeamName, setNewTeamName] = useState('')
+  const [creatingTeam, setCreatingTeam] = useState(false)
 
   const isSuperAdmin = Boolean(user?.isSuperAdmin)
   const teamOptions = isSuperAdmin ? allTeams : user?.teams ?? []
@@ -143,6 +147,59 @@ export function TeamsPage() {
     toast.success('Membro removido da equipe')
   }
 
+  const handleCreateTeam = async () => {
+    if (!newTeamName.trim() || !user) return
+    setCreatingTeam(true)
+    try {
+      const base = newTeamName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '')
+      const slug = `${base || 'equipe'}-${Math.random().toString(36).slice(2, 6)}`
+
+      const { data: team, error: teamError } = await supabase
+        .from('teams')
+        .insert({ name: newTeamName.trim(), slug })
+        .select('id, name, slug')
+        .single()
+
+      if (teamError || !team) {
+        toast.error(teamError?.message ?? 'Erro ao criar equipe')
+        return
+      }
+
+      const teamKey = await generateTeamKey()
+      const keyMaterial = await publicKeyToBase64(teamKey)
+      await supabase.from('teams').update({ key_material: keyMaterial }).eq('id', team.id)
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('public_key')
+        .eq('id', user.id)
+        .single()
+
+      const wrappedKey = profile?.public_key
+        ? await sealForMember(teamKey, await publicKeyFromBase64(profile.public_key))
+        : null
+
+      await supabase.from('team_members').insert({
+        team_id: team.id,
+        user_id: user.id,
+        role: 'admin',
+        ...(wrappedKey && { wrapped_key: wrappedKey }),
+      })
+
+      await grantAccessToMissingMembers(team.id, teamKey)
+
+      const newTeam: Team = { ...team, memberCount: 0 }
+      setAllTeams((prev) => [...prev, newTeam].sort((a, b) => a.name.localeCompare(b.name)))
+      setViewTeamId(team.id)
+      toast.success(`Equipe "${team.name}" criada com sucesso`)
+      setNewTeamName('')
+      setCreateTeamOpen(false)
+      loadMembers(team.id)
+    } finally {
+      setCreatingTeam(false)
+    }
+  }
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header
@@ -150,12 +207,20 @@ export function TeamsPage() {
         subtitle={viewTeam ? `Gerencie os membros de ${viewTeam.name}` : 'Gerencie os membros da sua equipe'}
         onMenuToggle={onMenuToggle}
         actions={
-          isAdmin && (
-            <Button className="gap-2" onClick={() => setInviteOpen(true)} disabled={!viewTeam}>
-              <Plus className="h-4 w-4" />
-              Adicionar membro
-            </Button>
-          )
+          <div className="flex gap-2">
+            {isSuperAdmin && (
+              <Button variant="outline" className="gap-2" onClick={() => setCreateTeamOpen(true)}>
+                <Plus className="h-4 w-4" />
+                Nova equipe
+              </Button>
+            )}
+            {isAdmin && (
+              <Button className="gap-2" onClick={() => setInviteOpen(true)} disabled={!viewTeam}>
+                <Plus className="h-4 w-4" />
+                Adicionar membro
+              </Button>
+            )}
+          </div>
         }
       />
 
@@ -184,6 +249,33 @@ export function TeamsPage() {
               </Button>
               <Button onClick={handleInvite} disabled={inviting || !inviteEmail}>
                 {inviting ? 'Adicionando...' : 'Adicionar'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={createTeamOpen} onOpenChange={setCreateTeamOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nova equipe</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label>Nome da equipe</Label>
+              <Input
+                placeholder="Ex: TI, Financeiro, Suporte..."
+                value={newTeamName}
+                onChange={(e) => setNewTeamName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreateTeam()}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setCreateTeamOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleCreateTeam} disabled={creatingTeam || !newTeamName.trim()}>
+                {creatingTeam ? 'Criando...' : 'Criar equipe'}
               </Button>
             </div>
           </div>
